@@ -1,0 +1,340 @@
+From b8da0ae2d09707e25f3df756ba005ba51a59694b Mon Sep 17 00:00:00 2001
+From: Guillaume Sauvage-Combat <sauvagecombat.guillaume@gmail.com>
+Date: Fri, 2 Oct 2026 13:43:10 +0000
+Subject: [PATCH] Consent Mode v2 (opt-out) + bandeau cookies sur toutes les
+ pages
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- Valeurs par défaut du Consent Mode posées inline dans <head>, avant GTM,
+  sur les 5 pages. Modèle opt-out (décision ESCAPAD) : consentement accordé
+  tant que l'utilisateur n'a pas explicitement refusé ; constante OPT_IN
+  pour basculer en opt-in strict si un jour nécessaire.
+- Nouveau js/consent.js : bandeau partagé (il n'existait que sur l'accueil),
+  texte corrigé (le site charge bien GA4 / Google Ads via GTM), mémorisation
+  du choix, gtag('consent','update') et événement dataLayer cc_consent_update.
+- index.html : suppression du bandeau inline (CSS, HTML, initCookies).
+- README : section « Mesure d'audience & consentement ».
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_011sVVwACTMmQPEwe5Pyq6Wu
+---
+ README.md           |  7 +++++
+ acces.html          | 10 +++++++
+ brunch.html         | 10 +++++++
+ coupe-du-monde.html | 10 +++++++
+ dejeuner.html       | 10 +++++++
+ index.html          | 53 +++++++-------------------------
+ js/consent.js       | 73 +++++++++++++++++++++++++++++++++++++++++++++
+ 7 files changed, 130 insertions(+), 43 deletions(-)
+ create mode 100644 js/consent.js
+
+diff --git a/README.md b/README.md
+index da816fb..3b8ec32 100644
+--- a/README.md
++++ b/README.md
+@@ -18,6 +18,13 @@ Site vitrine du Café Central, le café de sports d'ESCAPAD au 2ᵉ étage du Ce
+ - **FAQ**, section ESCAPAD sport (escalade & padel), infos pratiques, itinéraire Google Maps
+ - Entièrement responsive (mobile → grand écran)
+ 
++## Mesure d'audience & consentement
++
++- `GTM-TVBDT8RJ` est chargé sur toutes les pages ; `js/track.js` pousse les événements `reservation_click`, `phone_click`, `cta_click` et `devis_submit` dans le `dataLayer`.
++- **Consent Mode v2, modèle opt-out** : le consentement est accordé par défaut et n'est retiré que si l'utilisateur clique « Continuer sans accepter ». Les valeurs par défaut sont posées inline dans `<head>` avant GTM (constante `OPT_IN=false`) ; `js/consent.js` affiche le bandeau sur toutes les pages, mémorise le choix (`localStorage` « cc-cookie-consent ») et envoie la mise à jour du consentement.
++- Trafic interne : ouvrir une page avec `?internal=1` marque l'appareil (exclu des rapports GA4 via le filtre « Internal Traffic »).
++- Configuration GA4 / GTM complète : dépôt `ESCAPAD_lecafecentral`, dossier `analytics/`.
++
+ ## Déploiement
+ 
+ Site 100 % statique : il suffit de servir le dossier tel quel (GitHub Pages, Netlify, Vercel, ou n'importe quel hébergeur).
+diff --git a/acces.html b/acces.html
+index 45bbbb5..1985a1c 100644
+--- a/acces.html
++++ b/acces.html
+@@ -3,6 +3,15 @@
+ <head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
++<!-- Consent Mode v2 · valeurs par défaut (à garder AVANT Google Tag Manager, voir js/consent.js) -->
++<script>
++window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
++(function(){var OPT_IN=false;/* OPT-OUT (décision ESCAPAD) : consentement accordé tant que l'utilisateur n'a pas explicitement refusé. Ne passer à true (opt-in strict) que sur décision contraire. */
++var c=null;try{c=localStorage.getItem('cc-cookie-consent');}catch(e){}
++var g=OPT_IN?(c==='accepted'):(c!=='refused'),s=g?'granted':'denied';
++gtag('consent','default',{ad_storage:s,ad_user_data:s,ad_personalization:s,analytics_storage:s,functionality_storage:'granted',security_storage:'granted',wait_for_update:500});
++gtag('set','ads_data_redaction',!g);gtag('set','url_passthrough',true);window.__ccConsentDefault=true;})();
++</script>
+ <!-- Google Tag Manager -->
+ <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-TVBDT8RJ');</script>
+ <!-- End Google Tag Manager -->
+@@ -155,6 +164,7 @@ footer a{color:#FFF4C9}
+   <p style="margin-top:8px">Sports Addicts Society. · Café Central © 2026</p>
+ </footer>
+ 
++<script src="js/consent.js" defer></script>
+ <script src="js/track.js" defer></script>
+ </body>
+ </html>
+diff --git a/brunch.html b/brunch.html
+index 379e6e1..620de79 100644
+--- a/brunch.html
++++ b/brunch.html
+@@ -3,6 +3,15 @@
+ <head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
++<!-- Consent Mode v2 · valeurs par défaut (à garder AVANT Google Tag Manager, voir js/consent.js) -->
++<script>
++window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
++(function(){var OPT_IN=false;/* OPT-OUT (décision ESCAPAD) : consentement accordé tant que l'utilisateur n'a pas explicitement refusé. Ne passer à true (opt-in strict) que sur décision contraire. */
++var c=null;try{c=localStorage.getItem('cc-cookie-consent');}catch(e){}
++var g=OPT_IN?(c==='accepted'):(c!=='refused'),s=g?'granted':'denied';
++gtag('consent','default',{ad_storage:s,ad_user_data:s,ad_personalization:s,analytics_storage:s,functionality_storage:'granted',security_storage:'granted',wait_for_update:500});
++gtag('set','ads_data_redaction',!g);gtag('set','url_passthrough',true);window.__ccConsentDefault=true;})();
++</script>
+ <!-- Google Tag Manager -->
+ <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-TVBDT8RJ');</script>
+ <!-- End Google Tag Manager -->
+@@ -267,6 +276,7 @@ Merci</blockquote><div class="scores"><span>Cuisine 5/5</span><span>Service 5/5<
+ </footer>
+ <div class="sticky-cta"><a class="cta btn btn-pri" href="https://bookings.zenchef.com/results?rid=386365&pid=1001&shxpid=120945" target="_blank" rel="noopener noreferrer" data-cta="reserver" data-lp="brunch" data-loc="sticky">Réserver mon brunch</a></div>
+ 
++<script src="js/consent.js" defer></script>
+ <script src="js/track.js" defer></script>
+ </body>
+ </html>
+diff --git a/coupe-du-monde.html b/coupe-du-monde.html
+index 1562f20..a21172a 100644
+--- a/coupe-du-monde.html
++++ b/coupe-du-monde.html
+@@ -3,6 +3,15 @@
+ <head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
++<!-- Consent Mode v2 · valeurs par défaut (à garder AVANT Google Tag Manager, voir js/consent.js) -->
++<script>
++window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
++(function(){var OPT_IN=false;/* OPT-OUT (décision ESCAPAD) : consentement accordé tant que l'utilisateur n'a pas explicitement refusé. Ne passer à true (opt-in strict) que sur décision contraire. */
++var c=null;try{c=localStorage.getItem('cc-cookie-consent');}catch(e){}
++var g=OPT_IN?(c==='accepted'):(c!=='refused'),s=g?'granted':'denied';
++gtag('consent','default',{ad_storage:s,ad_user_data:s,ad_personalization:s,analytics_storage:s,functionality_storage:'granted',security_storage:'granted',wait_for_update:500});
++gtag('set','ads_data_redaction',!g);gtag('set','url_passthrough',true);window.__ccConsentDefault=true;})();
++</script>
+ <!-- Google Tag Manager -->
+ <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-TVBDT8RJ');</script>
+ <!-- End Google Tag Manager -->
+@@ -262,6 +271,7 @@ footer a{color:#FFF4C9}
+   if(MATCHS_CSV){fetch(MATCHS_CSV,{cache:'no-store'}).then(function(r){return r.text();}).then(function(t){try{var d=matchesFromSheet(t);if(d&&d.length){M=d;KO=[];}}catch(e){}}).catch(function(){}).then(start);}else{start();}
+ })();
+ </script>
++<script src="js/consent.js" defer></script>
+ <script src="js/track.js" defer></script>
+ </body>
+ </html>
+diff --git a/dejeuner.html b/dejeuner.html
+index 7258c08..1084e02 100644
+--- a/dejeuner.html
++++ b/dejeuner.html
+@@ -3,6 +3,15 @@
+ <head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
++<!-- Consent Mode v2 · valeurs par défaut (à garder AVANT Google Tag Manager, voir js/consent.js) -->
++<script>
++window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
++(function(){var OPT_IN=false;/* OPT-OUT (décision ESCAPAD) : consentement accordé tant que l'utilisateur n'a pas explicitement refusé. Ne passer à true (opt-in strict) que sur décision contraire. */
++var c=null;try{c=localStorage.getItem('cc-cookie-consent');}catch(e){}
++var g=OPT_IN?(c==='accepted'):(c!=='refused'),s=g?'granted':'denied';
++gtag('consent','default',{ad_storage:s,ad_user_data:s,ad_personalization:s,analytics_storage:s,functionality_storage:'granted',security_storage:'granted',wait_for_update:500});
++gtag('set','ads_data_redaction',!g);gtag('set','url_passthrough',true);window.__ccConsentDefault=true;})();
++</script>
+ <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-TVBDT8RJ');</script>
+ <title>Déjeuner au Café Central, du lundi au vendredi 11h30-14h30, Westfield Euralille</title>
+ <meta name="description" content="Déjeuner au Café Central, du lundi au vendredi de 11h30 à 14h30 : burger du coach, ravioles de potimarron, dos de cabillaud, entrecôte charolaise, salade d'automne. Fait maison, 2ᵉ étage de Westfield Euralille. Je réserve.">
+@@ -173,6 +182,7 @@ footer a{color:#FFF4C9}
+ </footer>
+ <div class="sticky-cta"><a class="cta btn btn-pri" href="https://bookings.zenchef.com/results?rid=386365&pid=1001" target="_blank" rel="noopener noreferrer" data-cta="reserver" data-lp="dejeuner" data-loc="sticky">Je réserve ma table</a></div>
+ 
++<script src="js/consent.js" defer></script>
+ <script src="js/track.js" defer></script>
+ </body>
+ </html>
+diff --git a/index.html b/index.html
+index 311831c..f939644 100644
+--- a/index.html
++++ b/index.html
+@@ -3,6 +3,15 @@
+ <head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
++<!-- Consent Mode v2 · valeurs par défaut (à garder AVANT Google Tag Manager, voir js/consent.js) -->
++<script>
++window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}
++(function(){var OPT_IN=false;/* OPT-OUT (décision ESCAPAD) : consentement accordé tant que l'utilisateur n'a pas explicitement refusé. Ne passer à true (opt-in strict) que sur décision contraire. */
++var c=null;try{c=localStorage.getItem('cc-cookie-consent');}catch(e){}
++var g=OPT_IN?(c==='accepted'):(c!=='refused'),s=g?'granted':'denied';
++gtag('consent','default',{ad_storage:s,ad_user_data:s,ad_personalization:s,analytics_storage:s,functionality_storage:'granted',security_storage:'granted',wait_for_update:500});
++gtag('set','ads_data_redaction',!g);gtag('set','url_passthrough',true);window.__ccConsentDefault=true;})();
++</script>
+ <!-- Google Tag Manager -->
+ <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start': new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0], j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-TVBDT8RJ');</script>
+ <!-- End Google Tag Manager -->
+@@ -275,16 +284,6 @@ textarea.field-input{resize:vertical}
+ .terr-side{display:flex;flex-direction:column;gap:22px}
+ .terr-side img{height:249px}
+ 
+-/* ── Bandeau cookies ── */
+-#cookie-banner{position:fixed;left:16px;right:16px;bottom:16px;z-index:70;max-width:560px;margin:0 auto;background:rgba(44,101,56,0.96);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:#FFF4C9;border:1px solid rgba(255,244,201,0.18);border-radius:18px;padding:22px 24px;box-shadow:0 18px 50px rgba(0,0,0,0.45)}
+-#cookie-banner h2{margin:0 0 8px;font-size:16px;font-weight:900;font-style:italic;text-transform:uppercase;letter-spacing:0.02em}
+-#cookie-banner p{margin:0;font-size:13.5px;line-height:1.6;color:rgba(255,244,201,0.8)}
+-.cookie-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+-.cookie-btn{flex:1;min-width:150px;font-family:inherit;font-size:13px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;padding:12px 18px;border-radius:999px;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+-.cookie-accept{background:#BA4E2E;color:#FFF4C9;border:none}
+-.cookie-accept:hover{background:#9E3F22}
+-.cookie-refuse{background:none;color:#FFF4C9;border:1.5px solid rgba(255,244,201,0.4)}
+-.cookie-refuse:hover{border-color:#FFF4C9;color:#FFF4C9}
+ 
+ /* ── Responsive 1100px ── */
+ @media(max-width:1100px){
+@@ -1124,14 +1123,6 @@ textarea.field-input{resize:vertical}
+ </div>
+ 
+ <!-- ═══════════════════════════ BANDEAU COOKIES ═══════════════════════════ -->
+-<div id="cookie-banner" role="dialog" aria-label="Gestion des cookies" aria-live="polite" style="display:none">
+-  <h2>Cookies &amp; confidentialité</h2>
+-  <p>Ce site n'utilise aucun cookie publicitaire ni traceur. Seul un stockage technique est employé pour mémoriser votre choix et, si vous nous écrivez, conserver votre demande de devis sur cet appareil. Vous pouvez l'accepter ou le refuser.</p>
+-  <div class="cookie-actions">
+-    <button type="button" id="cookie-refuse" class="cookie-btn cookie-refuse">Continuer sans accepter</button>
+-    <button type="button" id="cookie-accept" class="cookie-btn cookie-accept">Tout accepter</button>
+-  </div>
+-</div>
+ 
+ <!-- ═══════════════════════════ JAVASCRIPT ═══════════════════════════ -->
+ <script>
+@@ -1372,42 +1363,18 @@ textarea.field-input{resize:vertical}
+     });
+   }
+ 
+-  // ── Bandeau cookies (consentement RGPD) ──
+-  function initCookies() {
+-    var banner = document.getElementById('cookie-banner');
+-    if (!banner) return;
+-    var KEY = 'cc-cookie-consent';
+-    var stored = null;
+-    try { stored = localStorage.getItem(KEY); } catch (e) {}
+-    if (stored === 'accepted' || stored === 'refused') return;
+-
+-    banner.style.display = 'block';
+-
+-    function decide(choice) {
+-      try { localStorage.setItem(KEY, choice); } catch (e) {}
+-      banner.style.display = 'none';
+-      // Aucun traceur n'est chargé sur ce site : le choix est conservé
+-      // pour ne plus réafficher le bandeau et pour un éventuel usage futur.
+-    }
+-
+-    var accept = document.getElementById('cookie-accept');
+-    var refuse = document.getElementById('cookie-refuse');
+-    if (accept) accept.addEventListener('click', function() { decide('accepted'); });
+-    if (refuse) refuse.addEventListener('click', function() { decide('refused'); });
+-  }
+-
+   // ── Init all ──
+   function boot() {
+     initNav();
+     initPolaroids();
+     initFAQ();
+     initContact();
+-    initCookies();
+   }
+   boot();
+ 
+ })();
+ </script>
++<script src="js/consent.js" defer></script>
+ <script src="js/track.js" defer></script>
+ </body>
+ </html>
+diff --git a/js/consent.js b/js/consent.js
+new file mode 100644
+index 0000000..7a9af70
+--- /dev/null
++++ b/js/consent.js
+@@ -0,0 +1,73 @@
++/* Café Central — bandeau cookies + Consent Mode v2 (mise à jour du consentement).
++   Modèle OPT-OUT (décision ESCAPAD) : le consentement est accordé par défaut et n'est retiré que si
++   l'utilisateur clique « Continuer sans accepter ». Les valeurs PAR DÉFAUT du Consent Mode sont posées
++   inline dans <head>, avant GTM, sur chaque page (constante OPT_IN=false).
++   Ce fichier : affiche le bandeau sur toutes les pages, mémorise le choix (localStorage « cc-cookie-consent »)
++   et envoie gtag('consent','update') + l'événement dataLayer cc_consent_update.
++   API : ccConsent.get() → 'accepted' | 'refused' | null · ccConsent.set('accepted'|'refused') · ccConsent.reset() (réaffiche le bandeau). */
++(function () {
++  'use strict';
++  var KEY = 'cc-cookie-consent';
++  var PRIVACY_URL = 'https://www.escapad.fr/confidentialite';
++  var banner = null;
++
++  function read() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
++  function store(choice) { try { localStorage.setItem(KEY, choice); } catch (e) {} }
++  function push() { window.dataLayer = window.dataLayer || []; window.dataLayer.push(arguments); }
++
++  function apply(choice) {
++    var g = choice === 'accepted' ? 'granted' : 'denied';
++    push('consent', 'update', { ad_storage: g, ad_user_data: g, ad_personalization: g, analytics_storage: g });
++    push('set', 'ads_data_redaction', g === 'denied');
++    window.dataLayer.push({ event: 'cc_consent_update', consent_choice: choice });
++  }
++
++  function build() {
++    if (banner) return banner;
++    var style = document.createElement('style');
++    style.textContent =
++      '#cookie-banner{position:fixed;left:16px;right:16px;bottom:16px;z-index:70;max-width:560px;margin:0 auto;background:rgba(44,101,56,0.96);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:#FFF4C9;border:1px solid rgba(255,244,201,0.2);border-radius:18px;padding:22px 24px;box-shadow:0 20px 60px rgba(0,0,0,0.45);font-family:"Archivo",sans-serif}' +
++      '#cookie-banner h2{margin:0 0 8px;font-size:16px;font-weight:900;font-style:italic;text-transform:uppercase;letter-spacing:0.02em}' +
++      '#cookie-banner p{margin:0;font-size:13.5px;line-height:1.6;color:rgba(255,244,201,0.8)}' +
++      '#cookie-banner p a{color:#FFF4C9}' +
++      '.cookie-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}' +
++      '.cookie-btn{flex:1;min-width:150px;font-family:inherit;font-size:13px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;padding:12px 18px;border-radius:999px;cursor:pointer;transition:background .15s,border-color .15s}' +
++      '.cookie-accept{background:#BA4E2E;color:#FFF4C9;border:none}.cookie-accept:hover{background:#9E3F22}' +
++      '.cookie-refuse{background:none;color:#FFF4C9;border:1.5px solid rgba(255,244,201,0.4)}.cookie-refuse:hover{border-color:#FFF4C9}';
++    document.head.appendChild(style);
++
++    banner = document.createElement('div');
++    banner.id = 'cookie-banner';
++    banner.setAttribute('role', 'dialog');
++    banner.setAttribute('aria-label', 'Gestion des cookies');
++    banner.setAttribute('aria-live', 'polite');
++    banner.style.display = 'none';
++    banner.innerHTML =
++      '<h2>Cookies &amp; mesure d’audience</h2>' +
++      '<p>Nous utilisons Google Analytics pour mesurer l’audience du site et Google Ads pour mesurer nos campagnes. ' +
++      'Vous pouvez refuser : le site fonctionne exactement pareil. ' +
++      '<a href="' + PRIVACY_URL + '" target="_blank" rel="noopener">En savoir plus</a></p>' +
++      '<div class="cookie-actions">' +
++      '<button type="button" id="cookie-refuse" class="cookie-btn cookie-refuse">Continuer sans accepter</button>' +
++      '<button type="button" id="cookie-accept" class="cookie-btn cookie-accept">Tout accepter</button>' +
++      '</div>';
++    banner.querySelector('#cookie-accept').addEventListener('click', function () { decide('accepted'); });
++    banner.querySelector('#cookie-refuse').addEventListener('click', function () { decide('refused'); });
++    document.body.appendChild(banner);
++    return banner;
++  }
++
++  function show() { build().style.display = 'block'; }
++  function hide() { if (banner) banner.style.display = 'none'; }
++  function decide(choice) { store(choice); apply(choice); hide(); }
++
++  window.ccConsent = {
++    get: read,
++    set: decide,
++    reset: function () { try { localStorage.removeItem(KEY); } catch (e) {} show(); }
++  };
++
++  var stored = read();
++  if (stored === 'accepted' || stored === 'refused') return; // choix déjà exprimé sur cet appareil
++  if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
++})();
+-- 
+2.43.0
+
