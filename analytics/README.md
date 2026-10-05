@@ -12,7 +12,7 @@ Runbook complet pour créer la propriété GA4 du Café Central et brancher tout
 |---|---|---|---|---|
 | 1 | ~~Créer~~ **Compléter** la propriété `G-VVXGLCV6CR` : mesure améliorée, conservation 14 mois, Google Signals off, 7 dimensions, 3 événements clés, accès | Guillaume (compte admin GA ESCAPAD) | 3 min | `scripts/create_ga4_property.py` **ou** l'interface (§ 3) |
 | 2 | Importer la configuration dans GTM-TVBDT8RJ, tester, publier | Guillaume ou Simon | 10 min | `gtm/GTM-TVBDT8RJ-ga4-import.json` (§ 5) |
-| 3 | Déployer le consentement sur le site | Guillaume | 5 min | `site/consent-mode.patch` sur `ESCAPAD-lecafecentral_lille` (§ 6) |
+| 3 | ~~Déployer le consentement sur le site~~ **Fait le 05/10/2026** : PR [ESCAPAD-lecafecentral_lille#51](https://github.com/SwagHenri/ESCAPAD-lecafecentral_lille/pull/51) mergée, en production sur les 5 pages | — | — | § 6 |
 
 Puis recette (§ 7) et message à l'équipe (§ 10).
 
@@ -115,7 +115,9 @@ Procédure :
 
 ## 6 · Site : consentement (opt-out) sur toutes les pages
 
-`site/consent-mode.patch` s'applique au dépôt du site `ESCAPAD-lecafecentral_lille` (branche `main`, commit `38adbd2` ou postérieur) :
+**Déployé le 05/10/2026** via la PR [ESCAPAD-lecafecentral_lille#51](https://github.com/SwagHenri/ESCAPAD-lecafecentral_lille/pull/51) (mergée, Vercel en production). Vérifié sur www.lecafecentral.fr : les 5 pages portent le bloc Consent Mode inline et chargent `js/consent.js`, l'ancien bandeau inline a disparu. Le patch reste ici pour l'historique.
+
+`site/consent-mode.patch` s'appliquait au dépôt du site `ESCAPAD-lecafecentral_lille` (branche `main`, commit `38adbd2` ou postérieur) :
 
 ```bash
 cd ESCAPAD-lecafecentral_lille
@@ -136,7 +138,7 @@ Points juridiques à garder en tête (pas bloquants pour le déploiement, à arb
 - lecafecentral.fr n'a pas de page confidentialité propre ; le bandeau renvoie à celle d'escapad.fr, qui devrait mentionner le site du Café Central.
 - Prévoir un lien « Cookies » en pied de page appelant `ccConsent.reset()` pour permettre de changer d'avis.
 
-Tant que le patch n'est pas déployé, la balise `Consent Mode - défaut` du conteneur GTM joue le rôle de repli (même logique opt-out) ; elle s'efface d'elle-même dès que le site pose le défaut.
+La balise `Consent Mode - défaut` du conteneur GTM reste un repli (même logique opt-out) : elle ne fait rien tant que le site pose lui-même le défaut, ce qui est le cas depuis le 05/10.
 
 ## 7 · Recette de bout en bout
 
