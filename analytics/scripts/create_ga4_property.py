@@ -6,7 +6,8 @@ via l'API Google Analytics Admin, puis écrit l'ID de mesure dans l'export GTM.
 
 Ce que fait le script, dans l'ordre (chaque étape est idempotente : relancer ne crée pas de doublon) :
   1. retrouve le compte GA (par nom ou ID) ;
-  2. crée la propriété (fuseau Europe/Paris, devise EUR, secteur Food & Drink) ;
+  2. retrouve la propriété existante via son ID de mesure (KNOWN_MEASUREMENT_ID / --measurement-id / --property),
+     sinon la crée (fuseau Europe/Paris, devise EUR, secteur Food & Drink) ;
   3. crée le flux web https://www.lecafecentral.fr et récupère l'ID de mesure G-… ;
   4. règle la mesure améliorée (scroll, clics sortants, téléchargements ; pas de recherche / vidéo / formulaires) ;
   5. conservation des données : 14 mois, réinitialisation à chaque nouvelle activité ;
@@ -54,6 +55,10 @@ except ImportError:  # pragma: no cover
 # ───────────────────────────── Configuration (modifiable) ─────────────────────────────
 
 PROPERTY_NAME = "Café Central Lille · lecafecentral.fr"
+# Propriété déjà créée à la main (05/10/2026) : le script la retrouve par cet ID de mesure et COMPLÈTE sa
+# configuration (flux, mesure améliorée, conservation, dimensions, événements clés, accès) sans rien recréer.
+# Mettre "" pour repartir d'une création complète.
+KNOWN_MEASUREMENT_ID = "G-VVXGLCV6CR"
 TIME_ZONE = "Europe/Paris"
 CURRENCY = "EUR"
 INDUSTRY = "FOOD_AND_DRINK"
@@ -204,6 +209,21 @@ def pick_account(api: Admin, wanted: str | None):
         f"  {a['account'].removeprefix('accounts/'):>12}  {a.get('displayName')}" for a in summaries))
 
 
+def find_property_by_measurement_id(api: Admin, account: dict, mid: str):
+    """Retrouve (propriété, flux web) portant l'ID de mesure donné dans le compte, ou (None, None)."""
+    for p in account.get("propertySummaries", []):
+        try:
+            streams = api.list_all(f"v1beta/{p['property']}/dataStreams", "dataStreams")
+        except RuntimeError:
+            continue
+        for s in streams:
+            if s.get("webStreamData", {}).get("measurementId", "").upper() == mid.upper():
+                prop = api.get(f"v1beta/{p['property']}") or {"name": p["property"], "displayName": p.get("displayName")}
+                print(f"✓ Propriété existante retrouvée via {mid} : {prop['name']} « {prop.get('displayName')} »")
+                return prop, s
+    return None, None
+
+
 def ensure_property(api: Admin, account: dict) -> dict:
     for p in account.get("propertySummaries", []):
         if p.get("displayName") == PROPERTY_NAME:
@@ -329,6 +349,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--account", help="Nom ou ID du compte GA dans lequel créer la propriété (ex. ESCAPAD ou 123456789)")
     ap.add_argument("--list-accounts", action="store_true", help="Liste les comptes GA visibles et s'arrête")
+    ap.add_argument("--property", help="ID numérique d'une propriété existante à configurer (sinon retrouvée via l'ID de mesure connu)")
+    ap.add_argument("--measurement-id", help="ID de mesure G-… d'une propriété existante à retrouver (défaut : KNOWN_MEASUREMENT_ID)")
     ap.add_argument("--ads-customer-id", help="ID client Google Ads à associer (format 123-456-7890), optionnel")
     ap.add_argument("--no-users", action="store_true", help="Ne pas ajouter les accès utilisateurs")
     ap.add_argument("--set-measurement-id", metavar="G-XXXXXXXX", help="N'écrit que l'ID de mesure dans l'export GTM (propriété créée à la main)")
@@ -357,9 +379,23 @@ def main():
     account = pick_account(api, args.account)
     print(f"Compte GA : {account.get('displayName')} ({account['account']})")
 
-    prop = ensure_property(api, account)
+    prop, stream = None, None
+    mid_wanted = (args.measurement_id or KNOWN_MEASUREMENT_ID or "").strip()
+    if args.property:
+        prop = api.get(f"v1beta/properties/{args.property.removeprefix('properties/')}")
+        if not prop:
+            sys.exit(f"Propriété {args.property} introuvable ou inaccessible.")
+        print(f"✓ Propriété existante : {prop['name']} « {prop.get('displayName')} »")
+    elif mid_wanted:
+        prop, stream = find_property_by_measurement_id(api, account, mid_wanted)
+        if prop is None and not api.dry_run:
+            sys.exit(f"Aucune propriété du compte ne porte l'ID de mesure {mid_wanted}. "
+                     "Vérifie le compte (--account) ou passe --property <ID numérique>.")
+    if prop is None:
+        prop = ensure_property(api, account)
     prop_name = prop["name"]
-    stream = ensure_stream(api, prop_name)
+    if stream is None:
+        stream = ensure_stream(api, prop_name)
     measurement_id = stream["webStreamData"]["measurementId"]
 
     set_enhanced_measurement(api, stream["name"])

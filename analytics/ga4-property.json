@@ -1,0 +1,9 @@
+{
+  "displayName": "Café Central Lille · lecafecentral.fr",
+  "measurementId": "G-VVXGLCV6CR",
+  "propertyId": "à compléter (Admin GA4 → Paramètres de la propriété → ID de la propriété)",
+  "dataStreamUri": "https://www.lecafecentral.fr",
+  "gtmContainer": "GTM-TVBDT8RJ",
+  "createdManually": "2026-10-05",
+  "note": "Relancer analytics/scripts/create_ga4_property.py --account ESCAPAD pour compléter la configuration et réécrire ce fichier."
+}

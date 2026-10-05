@@ -2,13 +2,15 @@
 
 Runbook complet pour créer la propriété GA4 du Café Central et brancher tout le suivi : propriété, flux, GTM, consentement, accès. Tout ce qui pouvait être préparé l'est ; il reste **trois actions** qui demandent un compte Google administrateur d'ESCAPAD (détail plus bas).
 
-> **Pourquoi la propriété n'est pas déjà créée.** Cette session n'a aucun accès à Google Analytics (pas de connecteur GA/GTM, pas de compte Google authentifié). Créer une propriété passe par l'API Admin GA4 ou l'interface, avec le compte Google qui administre déjà le GA d'ESCAPAD (celui qui porte `G-69YJMYRW24`). Un *compte* GA tout neuf ne peut pas être créé par API (acceptation des CGU dans l'interface), d'où le choix de créer la propriété **dans le compte ESCAPAD existant** : une organisation = un compte, un site = une propriété.
+> **État au 05/10/2026.** La propriété GA4 a été créée à la main : ID de mesure **`G-VVXGLCV6CR`** (flux web lecafecentral.fr). Il reste à compléter sa configuration (§ 3), à brancher GTM (§ 5) et à déployer le consentement (§ 6).
+>
+> ⚠️ **Ne pas coller le snippet gtag.js** (`<script async src="https://www.googletagmanager.com/gtag/js?id=G-VVXGLCV6CR">…`) dans le site. GTM-TVBDT8RJ est déjà chargé sur toutes les pages et c'est lui qui porte la balise Google GA4 (export § 5). Le snippet en plus ferait compter chaque page vue deux fois et casserait le Consent Mode. L'ID est déjà renseigné dans `gtm/GTM-TVBDT8RJ-ga4-import.json`.
 
 ## 0 · En trois actions
 
 | # | Action | Qui | Durée | Outil |
 |---|---|---|---|---|
-| 1 | Créer et configurer la propriété GA4 | Guillaume (compte admin GA ESCAPAD) | 3 min | `scripts/create_ga4_property.py` **ou** l'interface (§ 3) |
+| 1 | ~~Créer~~ **Compléter** la propriété `G-VVXGLCV6CR` : mesure améliorée, conservation 14 mois, Google Signals off, 7 dimensions, 3 événements clés, accès | Guillaume (compte admin GA ESCAPAD) | 3 min | `scripts/create_ga4_property.py` **ou** l'interface (§ 3) |
 | 2 | Importer la configuration dans GTM-TVBDT8RJ, tester, publier | Guillaume ou Simon | 10 min | `gtm/GTM-TVBDT8RJ-ga4-import.json` (§ 5) |
 | 3 | Déployer le consentement sur le site | Guillaume | 5 min | `site/consent-mode.patch` sur `ESCAPAD-lecafecentral_lille` (§ 6) |
 
@@ -41,7 +43,9 @@ Puis recette (§ 7) et message à l'équipe (§ 10).
 | Google Ads | association GA4 ↔ Ads, **sans** importer les événements clés | les 3 conversions Ads existent déjà dans GTM ; importer en plus = double comptage |
 | Consentement | **Consent Mode v2 en opt-out** : accordé par défaut, retiré uniquement sur refus explicite | décision ESCAPAD (même modèle qu'escapad.fr) |
 
-## 3 · Créer la propriété
+## 3 · Compléter la propriété (créée le 05/10/2026 · `G-VVXGLCV6CR`)
+
+La création est faite. Le script retrouve la propriété **par son ID de mesure** (constante `KNOWN_MEASUREMENT_ID`) et ne crée rien en double : il complète ce qui manque (flux, mesure améliorée, conservation, Google Signals, dimensions, événements clés, accès).
 
 ### Option A · script (recommandée, 3 minutes)
 
@@ -55,13 +59,15 @@ python3 create_ga4_property.py --account ESCAPAD           # ou l'ID numérique 
 
 Le jeton : https://developers.google.com/oauthplayground → connecté avec le compte Google admin du GA ESCAPAD → scopes `https://www.googleapis.com/auth/analytics.edit` et `https://www.googleapis.com/auth/analytics.manage.users` → « Exchange authorization code for tokens » → copier l'*access token* (valable 1 h). Alternative gcloud décrite en tête du script.
 
-Le script est idempotent (relancer ne crée rien en double). Il crée la propriété, le flux, règle la mesure améliorée, la conservation, Google Signals, les dimensions, les événements clés, les accès (§ 8), puis :
+Le script est idempotent (relancer ne crée rien en double). Il retrouve la propriété `G-VVXGLCV6CR` dans le compte (sinon `--property <ID numérique>`), règle la mesure améliorée, la conservation, Google Signals, les dimensions, les événements clés, les accès (§ 8), puis :
 - écrit `analytics/ga4-property.json` (IDs à committer) ;
 - remplace `G-XXXXXXXXXX` par le vrai ID de mesure dans `gtm/GTM-TVBDT8RJ-ga4-import.json`.
 
 Options : `--dry-run` (montre les appels sans rien créer), `--no-users`, `--ads-customer-id 123-456-7890` (association Google Ads, nécessite d'être admin du compte Ads).
 
 ### Option B · interface (10 minutes)
+
+La propriété et le flux existent déjà : **sauter les points 1 à 3**, vérifier seulement la mesure améliorée (roue dentée du flux : décocher *Recherche sur le site*, *Engagement vidéo*, *Interactions avec les formulaires*), puis faire les points 4 à 7. Le point 8 est déjà fait.
 
 1. https://analytics.google.com → Admin → compte **ESCAPAD** → **Créer** → **Propriété**.
    Nom `Café Central Lille · lecafecentral.fr` · fuseau **France (GMT+01:00) Paris** · devise **Euro**.
@@ -103,7 +109,7 @@ Procédure :
 
 1. https://tagmanager.google.com → conteneur **GTM-TVBDT8RJ** → **Admin** → **Importer le conteneur**.
 2. Fichier : `GTM-TVBDT8RJ-ga4-import.json` · Espace de travail : **Nouveau** (`GA4 Café Central`) · Option : **Fusionner** → **Renommer les balises, déclencheurs et variables en conflit** → Confirmer. Les balises Google Ads de Simon ne sont pas touchées. Si Simon a un espace de travail non publié en cours, le prévenir avant de publier (§ 10).
-3. Si l'import affiche encore `G-XXXXXXXXXX` dans `const - GA4 Measurement ID`, y coller l'ID du flux.
+3. Vérifier que la variable `const - GA4 Measurement ID` contient bien `G-VVXGLCV6CR` (déjà renseigné dans l'export).
 4. **Aperçu** → ouvrir `https://www.lecafecentral.fr/?internal=1` → vérifier dans Tag Assistant : la balise Google part à l'initialisation ; un clic sur « Réserver » déclenche `GA4 - Event - reservation_click` avec `cta`, `lp`, `loc`, `destination` ; un clic sur le numéro déclenche `phone_click` ; un envoi de devis test déclenche `devis_submit` (penser à prévenir `privatisation.lille@` du test, le formulaire envoie un vrai mail).
 5. **Envoyer** → **Publier** avec une description de version (ex. « GA4 Café Central : balise Google + 4 événements + Consent Mode »).
 
@@ -163,7 +169,7 @@ Aujourd'hui `reservation_click` mesure l'intention. Pour la réservation confirm
 
 > Salut Simon, Clément, Nicolas,
 >
-> La propriété GA4 du Café Central est créée dans le compte GA ESCAPAD : **Café Central Lille · lecafecentral.fr**, ID de mesure `G-…` (propriété `…`). Simon est admin, Clément éditeur, Nicolas et Victor lecteurs.
+> La propriété GA4 du Café Central est créée dans le compte GA ESCAPAD : **Café Central Lille · lecafecentral.fr**, ID de mesure `G-VVXGLCV6CR`. Simon est admin, Clément éditeur, Nicolas et Victor lecteurs.
 >
 > Dans GTM-TVBDT8RJ j'ai publié la balise Google GA4 et les événements `reservation_click`, `phone_click`, `devis_submit`, `cta_click`, avec leurs paramètres en dimensions personnalisées ; les trois premiers sont des événements clés. Vos trois conversions Google Ads n'ont pas bougé : ne pas importer les événements clés GA4 dans Ads, ça compterait double. Le consentement est en opt-out (accordé sauf refus explicite), Consent Mode v2 branché sur toutes les pages.
 >
@@ -175,7 +181,7 @@ Aujourd'hui `reservation_click` mesure l'intention. Pour la réservation confirm
 analytics/
 ├─ README.md                          ← ce runbook
 ├─ tracking-plan.md                   ← dictionnaire des événements, paramètres, dimensions, clés
-├─ ga4-property.json                  ← (créé par le script) IDs de la propriété et du flux
+├─ ga4-property.json                  ← IDs de la propriété et du flux (partiel tant que le script n'a pas tourné)
 ├─ gtm/GTM-TVBDT8RJ-ga4-import.json   ← export GTM à importer (Fusionner)
 ├─ scripts/create_ga4_property.py     ← création + configuration via l'API Admin GA4
 ├─ scripts/requirements.txt
