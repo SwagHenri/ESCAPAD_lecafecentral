@@ -243,7 +243,7 @@
         "tagId": "104",
         "name": "GA4 - Event - phone_click",
         "type": "gaawe",
-        "notes": "Événement clé n°2 : clic sur le numéro de téléphone (surtout mobile).",
+        "notes": "Événement clé n°2 : clic sur le numéro de téléphone (surtout mobile). lp = page, loc = emplacement du bouton (bar, hero, final, sticky…) depuis le 08/10/2026.",
         "parameter": [
           {
             "type": "BOOLEAN",
@@ -271,6 +271,36 @@
                     "type": "TEMPLATE",
                     "key": "parameterValue",
                     "value": "{{dlv - phone_number}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "lp"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{dlv - lp}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "loc"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{dlv - loc}}"
                   }
                 ]
               }

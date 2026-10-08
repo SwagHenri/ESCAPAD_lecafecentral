@@ -8,7 +8,7 @@ Source côté site : `js/track.js` (clics) et `index.html` (devis). Aucune donn�
 | Événement dataLayer | Déclenché quand | Paramètres poussés | Tag GTM (import) | Événement GA4 | Clé ? |
 |---|---|---|---|---|---|
 | `reservation_click` | Clic sur un bouton « Réserver » (`data-cta="reserver"`), départ vers Zenchef | `cta`, `lp`, `loc`, `destination`, `page` | GA4 - Event - reservation_click | `reservation_click` | **Oui** · 1×/session |
-| `phone_click` | Clic sur un lien `tel:` (+33 7 75 76 31 66) | `phone_number`, `page` | GA4 - Event - phone_click | `phone_click` | **Oui** · 1×/session |
+| `phone_click` | Clic sur un lien `tel:` (+33 7 75 76 31 66), dont les boutons « J'appelle pour réserver » | `phone_number`, `lp`, `loc`, `page` | GA4 - Event - phone_click | `phone_click` | **Oui** · 1×/session |
 | `devis_submit` | Envoi réussi du formulaire de devis privatisation (`#contact`) | `type`, `personnes`, `page` | GA4 - Event - devis_submit | `devis_submit` (params renommés `devis_type`, `devis_personnes`) | **Oui** · 1×/événement |
 | `cta_click` | Clic sur un autre lien taggé `data-cta` (ex. `brunch-savoir-plus`) | `cta`, `lp`, `loc`, `destination`, `page` | GA4 - Event - cta_click | `cta_click` | Non |
 | `cc_consent_update` | Choix dans le bandeau cookies (après patch `site/consent-mode.patch`) | `consent_choice` | — (disponible pour un déclencheur) | — | Non |
@@ -21,7 +21,7 @@ Source côté site : `js/track.js` (clics) et `index.html` (devis). Aucune donn�
 |---|---|
 | `cta` | `reserver`, `brunch-savoir-plus` |
 | `lp` (page) | `home`, `brunch`, `dejeuner`, `acces`, `coupe-du-monde` |
-| `loc` (emplacement) | `nav`, `hero`, `sticky`, `bar`, `final`, `footer`, `diffusion`, `section-brunch` |
+| `loc` (emplacement) | `nav`, `hero`, `sticky`, `bar`, `final`, `footer`, `diffusion`, `section-brunch` (boutons téléphone : `bar`, `hero`, `final`, `sticky`) |
 | `destination` | `zenchef`, `interne` |
 | `phone_number` | `+33775763166` |
 | `type` → `devis_type` | libellés du select du formulaire (Anniversaire, Réunion d'équipe, Autre…) |
@@ -47,6 +47,7 @@ Réglage du flux web : scroll **on**, clics sortants **on**, téléchargements *
 | `loc` | Emplacement CTA (loc) | reservation_click, cta_click |
 | `destination` | Destination CTA | reservation_click, cta_click |
 | `phone_number` | Numéro appelé | phone_click |
+| `lp`, `loc` | *(mêmes dimensions que ci-dessus)* | phone_click (boutons « J'appelle pour réserver », depuis le 08/10/2026) |
 | `devis_type` | Type d'événement (devis) | devis_submit |
 | `devis_personnes` | Nb de personnes (devis) | devis_submit |
 | `traffic_type` | *(réservé GA4, pas à créer)* | balise Google : `internal` pour l'équipe |
