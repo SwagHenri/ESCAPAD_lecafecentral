@@ -1,0 +1,2 @@
+requests>=2.31
+google-auth>=2.29   # optionnel : uniquement pour l'authentification via gcloud (Application Default Credentials)
